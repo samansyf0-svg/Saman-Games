@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>رمز مخفی</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px 12px;min-height:100vh;background:radial-gradient(circle at top,#29234c,#101426 70%);color:#f5f7ff;font-family:Tahoma,Arial;text-align:center}
+main{max-width:440px;margin:auto}h1{font-size:29px}.sub{color:#aab3d1;font-size:13px}
+.stats{display:flex;gap:8px;margin:20px 0}.stat,.card{background:#1a2038;border:1px solid #ffffff15;border-radius:17px}.stat{flex:1;padding:12px 3px}.stat span{display:block;color:#aab3d1;font-size:11px;margin-bottom:8px}.stat strong{font-size:20px;color:#54e1e8}
+.card{padding:16px;margin-bottom:13px}.slots{display:flex;direction:ltr;justify-content:center;gap:9px;margin:18px}.slot{width:53px;height:59px;display:grid;place-items:center;background:#0e1325;border:1px solid #54e1e855;border-radius:12px;font-size:27px;color:#54e1e8}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr}.key{height:47px;border:1px solid #ffffff15;border-radius:12px;background:#252c49;color:white;font-size:19px}.key:disabled{opacity:.35}.reward:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:8px;margin-top:11px}.btn{font-family:inherit;cursor:pointer;flex:1;padding:13px 8px;border:0;border-radius:12px;font-weight:bold;font-size:13px}.go{background:linear-gradient(100deg,#54e1e8,#80f0cf);color:#101426}.alt{background:#ffffff12;color:white;border:1px solid #ffffff20}.reward{width:100%;margin-top:10px;background:linear-gradient(100deg,#9b83ff,#d58bff);color:#17112c}
+#message{background:#0e1325;border-radius:12px;padding:12px;margin-top:12px;color:#aab3d1;font-size:12px;line-height:1.9}#history{display:grid;gap:7px;margin-top:12px}
+#clueList{display:grid;gap:7px;margin-top:12px;text-align:right}.clue{background:#ffffff09;border-right:3px solid #9b83ff;border-radius:9px;padding:10px;font-size:12px;line-height:1.8;color:#d9def3}.empty{font-size:12px;color:#8993b4;padding:8px}.attempt{display:flex;justify-content:space-between;gap:8px;background:#ffffff09;border-radius:9px;padding:10px;font-size:11px}.guess{direction:ltr;letter-spacing:4px;font-size:16px}.rules{color:#aab3d1;font-size:12px;line-height:2;text-align:right}.overlay{position:fixed;inset:0;background:#090c18e8;display:none;place-items:center;padding:18px;z-index:5}.overlay.show{display:grid}.modal{width:min(100%,360px);background:#1b223b;border:1px solid #ffffff20;border-radius:22px;padding:22px}.modal h2{margin:8px}.modal p{font-size:13px;line-height:1.9;color:#b5bed8}.gift{font-size:22px;letter-spacing:2px;direction:ltr;background:#0e1325;border-radius:12px;padding:14px;margin:14px 0;color:#54e1e8;font-weight:bold}.small{font-size:10px;color:#8993b4;line-height:1.8;margin-top:10px}
+.music-btn{width:100%;margin:0 0 12px;background:#ffffff12;color:#e7e9ff;border:1px solid #ffffff25}
+#celebration{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+</style>
+</head>
+<body>
+<main>
+<canvas id="celebration" aria-hidden="true"></canvas>
+<h1>🔐 رمز مخفی</h1><div class="sub">رمز را کشف کن و امتیاز بگیر!</div>
+<button class="btn music-btn" id="musicToggle">🎵 موزیک</button>
+<input id="musicFile" type="file" accept="audio/*" hidden>
+<audio id="gameMusic" loop></audio>
+<div class="stats"><div class="stat"><span>مرحله</span><strong id="level">۱</strong></div><div class="stat"><span>امتیاز</span><strong id="score">۰</strong></div><div class="stat"><span>فرصت باقی‌مانده</span><strong id="left">۱۰</strong></div></div>
+<section class="card"><b>رمز چهاررقمی را حدس بزن</b><div class="slots"><div class="slot" id="s0"></div><div class="slot" id="s1"></div><div class="slot" id="s2"></div><div class="slot" id="s3"></div></div>
+<div class="keys" id="keys"><button class="key" data-n="1">1</button><button class="key" data-n="2">2</button><button class="key" data-n="3">3</button><button class="key" data-n="4">4</button><button class="key" data-n="5">5</button><button class="key" data-n="6">6</button><button class="key" data-n="7">7</button><button class="key" data-n="8">8</button><button class="key" data-n="9">9</button><button class="key" data-act="clear">پاک</button><button class="key" data-n="0">0</button><button class="key" data-act="back">⌫</button></div>
+<div class="actions"><button class="btn go" id="check">بررسی رمز</button><button class="btn alt" id="hint">💡 راهنمایی</button></div><button class="btn reward" id="adReward">🎁 تبلیغ ببین و رمز صحیح را بگیر</button><div id="message">مرحله اول آسونه! رمز ۴ رقم متفاوت دارد.</div><div class="small">تبلیغ واقعی پس از اتصال شبکه تبلیغاتی فعال می‌شود.</div></section>
+<section class="card"><b>💡 سرنخ‌های این مرحله</b><div id="clueList"><div class="empty">هنوز سرنخی نگرفتی. دکمه راهنمایی را بزن.</div></div></section>
+<section class="card"><b>حدس‌های قبلی</b><div id="history"></div></section>
+<section class="card" id="rankingCard">
+ <b>🏆 رنکینگ بازیکن‌ها</b>
+ <div style="display:flex;gap:8px;margin-top:12px">
+  <input id="playerName" maxlength="18" placeholder="اسم بازیکن" value="بازیکن" style="min-width:0;flex:1;background:#0e1325;border:1px solid #ffffff25;border-radius:10px;padding:11px;color:white;font:inherit">
+  <button class="btn go" id="savePlayerName" style="flex:0 0 auto">ثبت اسم</button>
+ </div>
+ <div id="rankingList" style="display:grid;gap:7px;margin-top:12px;text-align:right"><div class="empty">هنوز امتیازی ثبت نشده.</div></div>
+ <div class="small">رنکینگ فعلاً روی همین دستگاه ذخیره می‌شود؛ برای رقابت آنلاین بین همه بازیکن‌ها، سرور لازم است.</div>
+</section>
+<section class="card rules"><b>راهنمای بازی</b><br>🟢 رقم درست در جای درست<br>🟣 رقم درست ولی در جای اشتباه<br>مراحل اول آسون‌ترند و بعد بازی سخت‌تر می‌شود.</section>
+</main>
+<div class="overlay" id="overlay"><div class="modal"><div style="font-size:40px" id="modalIcon">🎉</div><h2 id="modalTitle">آفرین!</h2><p id="modalText"></p><div id="giftCode" class="gift" style="display:none"></div><div class="actions"><button class="btn go" id="modalMain">ادامه</button><button class="btn alt" id="modalClose">بستن</button></div><div class="small" id="modalNote"></div></div></div>
+<script>
+const $ = id => document.getElementById(id);
+const fa = n => String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+let secret = "", entry = "", level = 1, score = 0;
+let tries = 0, maxTries = 20, finished = false, hints = 0, history = [], modalAction = null;
+let hintPositions = [], adTimer = null;
+const RANKING_KEY = 'ramzeMakhfiRankingV1';
+const PLAYER_KEY = 'ramzeMakhfiPlayerName';
+let musicOn = false, audioCtx = null, musicNodes = [], musicTimer = null, celebrationFrame = null;
+const AD_COOLDOWN_MS = 3 * 60 * 1000;
+const AD_READY_KEY = "ramzeMakhfiAdReadyAt";
+function attemptsForLevel(){return 20;}
+function makeSecret(){const easy=["1234","2580","2468"];if(level<=3)return easy[level-1];let result="";while(result.length<4){const digit=String(Math.floor(Math.random()*10));if(!result.includes(digit))result+=digit;}return result;}
+function startLevel(next=false){if(next)level++;secret=makeSecret();entry="";tries=0;maxTries=attemptsForLevel();finished=false;hints=0;hintPositions=[];history=[];$('history').innerHTML="";$('clueList').innerHTML='<div class="empty">هنوز سرنخی نگرفتی. دکمه راهنمایی را بزن.</div>';$('overlay').classList.remove('show');$('check').textContent="بررسی رمز";$('message').textContent=level<=3?"مرحله آموزشی: رمز ۴ رقم متفاوت دارد.":"با سرنخ‌ها رمز را پیدا کن.";render();renderAdButton();}
+function render(){$('level').textContent=fa(level);$('score').textContent=fa(score);$('left').textContent=fa(Math.max(0,maxTries-tries));for(let i=0;i<4;i++)$('s'+i).textContent=entry[i]||"";document.querySelectorAll('[data-n]').forEach(b=>{b.disabled=finished||entry.length>=4||entry.includes(b.dataset.n);});$('check').disabled=finished||entry.length!==4;$('hint').disabled=finished||hintPositions.length>=4;}
+function addDigit(n){if(finished||entry.length>=4||entry.includes(n))return;entry+=n;render();}
+$('keys').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.n!==undefined)addDigit(b.dataset.n);else if(b.dataset.act==='clear'){entry="";render();}else if(b.dataset.act==='back'){entry=entry.slice(0,-1);render();}});
+function showModal(icon,title,msg,label,action,code="",note=""){$('modalIcon').textContent=icon;$('modalTitle').textContent=title;$('modalText').textContent=msg;$('giftCode').style.display=code?'block':'none';$('giftCode').textContent=code;$('modalMain').textContent=label;$('modalNote').textContent=note;modalAction=action;$('overlay').classList.add('show');}
+$('modalClose').onclick=()=>{$('overlay').classList.remove('show');};
+$('modalMain').onclick=()=>{$('overlay').classList.remove('show');const action=modalAction;modalAction=null;if(action)action();};
+function getPlayerName(){
+  const typed = ($('playerName')?.value || '').trim().slice(0,18);
+  return typed || 'بازیکن';
+}
+function readRanking(){
+  try { const data = JSON.parse(localStorage.getItem(RANKING_KEY) || '[]'); return Array.isArray(data) ? data : []; }
+  catch(e) { return []; }
+}
+function renderRanking(){
+  const list = $('rankingList');
+  if (!list) return;
+  const rows = readRanking().sort((a,b) => b.score-a.score || b.level-a.level).slice(0,10);
+  if (!rows.length) { list.innerHTML = '<div class="empty">هنوز امتیازی ثبت نشده؛ اولین نفر باش!</div>'; return; }
+  list.innerHTML = rows.map((row,index) => `<div class="attempt" style="align-items:center"><span>${['🥇','🥈','🥉'][index] || (fa(index+1)+'.')} ${escapeHtml(row.name)}</span><span>مرحله ${fa(row.level)} · ${fa(row.score)} امتیاز</span></div>`).join('');
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function saveRankingResult(){
+  const name = getPlayerName();
+  const rows = readRanking();
+  const existing = rows.find(row => row.name.toLowerCase() === name.toLowerCase());
+  if (existing) { existing.score = Math.max(Number(existing.score)||0, score); existing.level = Math.max(Number(existing.level)||1, level); }
+  else rows.push({name, score, level});
+  rows.sort((a,b) => b.score-a.score || b.level-a.level);
+  try { localStorage.setItem(RANKING_KEY, JSON.stringify(rows.slice(0,50))); } catch(e) {}
+  try { localStorage.setItem(PLAYER_KEY, name); } catch(e) {}
+  renderRanking();
+}
+$('savePlayerName').addEventListener('click', () => {
+  const name = getPlayerName();
+  $('playerName').value = name;
+  try { localStorage.setItem(PLAYER_KEY, name); } catch(e) {}
+  $('message').textContent = `اسم بازیکن ذخیره شد: ${name}`;
+  renderRanking();
+});
+try { const savedName = localStorage.getItem(PLAYER_KEY); if (savedName) $('playerName').value = savedName; } catch(e) {}
+
+function submitGuess(){if(finished||entry.length!==4)return;const guess=entry;tries++;let exact=0,near=0;for(let i=0;i<4;i++){if(guess[i]===secret[i])exact++;else if(secret.includes(guess[i]))near++;}history.unshift({guess,exact,near});$('history').innerHTML=history.map(h=>`<div class="attempt"><span class="guess">${h.guess}</span><span>🟢 ${fa(h.exact)} درست | 🟣 ${fa(h.near)} جابه‌جا</span></div>`).join('');if(exact===4){finished=true;const points=Math.max(50,150-(tries-1)*10-hints*15);score+=points;saveRankingResult();render();$('message').textContent=`آفرین! ${fa(points)} امتیاز گرفتی.`;celebrate();showModal('🎉','کد شکسته شد',`تعداد تلاش: ${fa(tries)}
+گل و آتش‌بازی مبارک!`,'مرحله بعد',()=>{celebrate();startLevel(true);});return;}if(tries>=maxTries){finished=true;render();$('message').textContent='فرصت تمام شد؛ دوباره تلاش کن.';showModal('🔎','این بار نشد!',`رمز این مرحله ${secret} بود.`,'تلاش دوباره',()=>startLevel(false));return;}$('message').textContent=`🟢 ${fa(exact)} رقم در جای درست و 🟣 ${fa(near)} رقم در جای اشتباه.`;entry="";render();}
+$('check').onclick=submitGuess;
+$('hint').onclick=()=>{if(finished||hintPositions.length>=4)return;const available=[0,1,2,3].filter(pos=>!hintPositions.includes(pos));const pos=available[Math.floor(Math.random()*available.length)];hintPositions.push(pos);hints++;const clue=`سرنخ ${fa(hints)}: رقم جایگاه ${fa(pos+1)} برابر ${fa(secret[pos])} است.`;if(hints===1)$('clueList').innerHTML='';const item=document.createElement('div');item.className='clue';item.textContent='💡 '+clue;$('clueList').appendChild(item);$('message').textContent=clue;render();};
+// دکمه جایزه در این نسخه نمایشی است؛ تبلیغ واقعی هنوز متصل نشده. هر بار استفاده، ۳ دقیقه قفل می‌شود.
+function getAdReadyAt(){try{return Number(localStorage.getItem(AD_READY_KEY)||0);}catch(e){return 0;}}
+function setAdReadyAt(value){try{localStorage.setItem(AD_READY_KEY,String(value));}catch(e){}}
+function renderAdButton(){const btn=$('adReward');const remaining=Math.max(0,getAdReadyAt()-Date.now());if(remaining>0){btn.disabled=true;const seconds=Math.ceil(remaining/1000);const m=String(Math.floor(seconds/60)).padStart(2,'0');const sec=String(seconds%60).padStart(2,'0');btn.textContent=`⏳ دریافت رمز بعد از ${m}:${sec}`;}else{btn.disabled=!!finished;btn.textContent='🎁 تبلیغ ببین و رمز صحیح را بگیر';}}
+if(adTimer)clearInterval(adTimer);adTimer=setInterval(renderAdButton,1000);
+$('adReward').onclick=()=>{if(finished){showModal('ℹ️','مرحله تمام شده','برای گرفتن رمز، اول مرحله بعد یا تلاش دوباره را شروع کن.','باشه',null);return;}const remaining=getAdReadyAt()-Date.now();if(remaining>0){renderAdButton();return;}setAdReadyAt(Date.now()+AD_COOLDOWN_MS);renderAdButton();showModal('🎁','رمز صحیح مرحله',`رمز صحیح این مرحله: ${secret}`,'باشه',null,secret,'نسخه آزمایشی: تبلیغ واقعی هنوز وصل نشده. پس از استفاده، این بخش ۳ دقیقه منتظر می‌ماند.');};
+// جشن تصویری سبک: گلبرگ، اکلیل و آتش‌بازی روی صفحه
+function celebrate(){
+  const canvas=$('celebration'), ctx=canvas.getContext('2d');
+  const resize=()=>{canvas.width=window.innerWidth*devicePixelRatio;canvas.height=window.innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);};
+  resize();
+  const w=window.innerWidth,h=window.innerHeight;
+  const colors=['#ff75b5','#ffd166','#54e1e8','#9b83ff','#80f0cf','#ffffff','#ff8c69'];
+  const particles=[];
+  for(let burst=0;burst<7;burst++){
+    const ox=Math.random()*w, oy=h*(0.18+Math.random()*0.48);
+    for(let i=0;i<42;i++){
+      const a=Math.PI*2*i/42, speed=1.2+Math.random()*3.2;
+      particles.push({x:ox,y:oy,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:65+Math.random()*40,max:105,size:2+Math.random()*3,color:colors[Math.floor(Math.random()*colors.length)],flower:Math.random()<.25,rot:Math.random()*6,vr:(Math.random()-.5)*.16});
+    }
+  }
+  let frame=0;
+  if(celebrationFrame)cancelAnimationFrame(celebrationFrame);
+  function draw(){
+    ctx.clearRect(0,0,w,h); let alive=false;
+    for(const p of particles){if(p.life<=0)continue;alive=true;p.x+=p.vx;p.y+=p.vy;p.vy+=.035;p.vx*=.992;p.life--;p.rot+=p.vr;ctx.globalAlpha=Math.min(1,p.life/20);ctx.fillStyle=p.color;
+      if(p.flower){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);for(let k=0;k<5;k++){ctx.rotate(Math.PI*2/5);ctx.beginPath();ctx.ellipse(0,-p.size*1.5,p.size*.7,p.size*1.5,0,0,Math.PI*2);ctx.fill();}ctx.beginPath();ctx.arc(0,0,p.size*.55,0,Math.PI*2);ctx.fillStyle='#ffe8a3';ctx.fill();ctx.restore();}
+      else{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*1.8);ctx.restore();}
+    }
+    ctx.globalAlpha=1;frame++;if(alive&&frame<180)celebrationFrame=requestAnimationFrame(draw);else{ctx.clearRect(0,0,w,h);celebrationFrame=null;}
+  }
+  draw();
+}
+
+// کاربر فایل موسیقی خودش را انتخاب می‌کند؛ برای نمونه فایل صوتی‌ای که مجاز به استفاده از آن است.
+const musicFileInput = $('musicFile');
+const gameMusic = $('gameMusic');
+let currentMusicUrl = null;
+$('musicToggle').addEventListener('click', async () => {
+  if (!gameMusic.src) {
+    musicFileInput.click();
+    return;
+  }
+  if (gameMusic.paused) {
+    try {
+      await gameMusic.play();
+      $('musicToggle').textContent = '🔇 موزیک: خاموش کردن';
+      $('message').textContent = '🎵 موزیک در حال پخش است.';
+    } catch (e) {
+      $('message').textContent = 'برای پخش، دوباره روی دکمه موزیک بزن.';
+    }
+  } else {
+    gameMusic.pause();
+    $('musicToggle').textContent = '🎵 موزیک: پخش';
+  }
+});
+musicFileInput.addEventListener('change', async () => {
+  const file = musicFileInput.files && musicFileInput.files[0];
+  if (!file) return;
+  if (currentMusicUrl) URL.revokeObjectURL(currentMusicUrl);
+  currentMusicUrl = URL.createObjectURL(file);
+  gameMusic.src = currentMusicUrl;
+  gameMusic.volume = 0.35;
+  try {
+    await gameMusic.play();
+    $('musicToggle').textContent = '🔇 موزیک: خاموش کردن';
+    $('message').textContent = '🎵 موزیک در حال پخش است.';
+  } catch (e) {
+    $('musicToggle').textContent = '🎵 موزیک: پخش';
+    $('message').textContent = 'فایل انتخاب شد؛ برای پخش دوباره روی موزیک بزن.';
+  }
+});
+window.addEventListener('resize',()=>{const c=$('celebration');c.width=window.innerWidth*devicePixelRatio;c.height=window.innerHeight*devicePixelRatio;});
+
+document.addEventListener('keydown',e=>{if(/^[0-9]$/.test(e.key))addDigit(e.key);if(e.key==='Backspace'){entry=entry.slice(0,-1);render();}if(e.key==='Enter')submitGuess();});
+startLevel();
+renderRanking();
+</script>
+</body>
+</html>
